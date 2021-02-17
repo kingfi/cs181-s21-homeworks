@@ -7,6 +7,7 @@
 import csv
 import numpy as np
 import matplotlib.pyplot as plt
+import math
 
 csv_filename = 'data/year-sunspots-republicans.csv'
 years  = []
@@ -64,13 +65,33 @@ def make_basis(xx,part='a',is_years=True):
 #DO NOT CHANGE LINES 65-69
     if part == 'a' and is_years:
         xx = (xx - np.array([1960]*len(xx)))/40
-        
+
     if part == "a" and not is_years:
         xx = xx/20
-        
-        
-    return None
 
+    if part == "a":
+        arr = []
+        arr = [[ x**j for j in range(6)] for x in xx]
+        return np.array(arr)
+
+    if part == 'b':
+        arr = []
+        arr = [ ([1] + [math.exp(( -(x - j)**2) / 25) for j in range(1960, 2011, 5)]) for x in xx]
+        return np.array(arr)
+
+    if part == 'c':
+        arr = []
+        arr = [ ([1] + [ math.cos(x / j) for j in range(1, 6)]) for x in xx]
+        return np.array(arr)
+
+    if part == 'd':
+        arr = []
+        arr = [ ([1] + [ math.cos(x / j) for j in range(1, 26)]) for x in xx]
+        return np.array(arr)
+
+    return
+
+#print("basis ", make_basis(years, part="b", is_years=True))
 # Nothing fancy for outputs.
 Y = republican_counts
 
@@ -82,14 +103,52 @@ def find_weights(X,Y):
 # Compute the regression line on a grid of inputs.
 # DO NOT CHANGE grid_years!!!!!
 grid_years = np.linspace(1960, 2005, 200)
-grid_X = np.vstack((np.ones(grid_years.shape), grid_years))
-grid_Yhat  = np.dot(grid_X.T, w)
+grid_sunspots = np.linspace(0, 160, 200)
+#grid_X = np.vstack((np.ones(grid_years.shape), grid_years))
 
-# TODO: plot and report sum of squared error for each basis
+print("Years Loss: ")
+for part in ['a', 'b', 'c', 'd']:
+    w = find_weights(make_basis(years, part= part, is_years=True), Y)
+    basis = make_basis(grid_years, part=part)
+    grid_Yhat  = np.dot(basis, w)
+    # TODO: plot and report sum of squared error for each basis
 
-# Plot the data and the regression line.
-plt.plot(years, republican_counts, 'o', grid_years, grid_Yhat, '-')
-plt.xlabel("Year")
-plt.ylabel("Number of Republicans in Congress")
-plt.show()
+    loss = 0
+    for i in range(len(Y)):
+        yhat = np.dot(make_basis(years, part = part), w)
+        y = Y[i]
+        loss = loss + (y - yhat[i])**2
+    print('L2: ', loss)
+
+    # Plot the data and the regression line
+    plt.plot(years, republican_counts, 'o', grid_years, grid_Yhat, '-')
+    plt.xlabel("Year")
+    plt.ylabel("Number of Republicans in Congress")
+    plt.savefig('Year_' + part + '.png')
+    plt.show()
+
+print("Sunspot Loss: ")
+for part in ['a', 'c', 'd']:
+    w = find_weights(make_basis(sunspot_counts[years < last_year], part= part, is_years=False), Y[years < last_year])
+    basis = make_basis(grid_sunspots, part = part, is_years=False)
+    grid_Yhat  = np.dot(basis, w)
+
+
+    loss = 0
+    for i in range(len(Y[years < last_year])):
+        yhat = np.dot(make_basis(sunspot_counts[years < last_year], part = part, is_years=False), w)
+        y = Y[i]
+        loss = loss + (y - yhat[i])**2
+    print('L2: ', loss)
+
+    # Plot the data and the regression line
+    plt.plot(sunspot_counts[years < last_year], republican_counts[years < last_year], 'o', grid_sunspots, grid_Yhat, '-')
+    plt.xlabel("Sunspot Count")
+    plt.ylabel("Number of Republicans in Congress")
+    plt.savefig('Sunspot' + part + '.png')
+    plt.show()
+
+
+
+
 
