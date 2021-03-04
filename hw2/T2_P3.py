@@ -15,11 +15,12 @@ from T2_P3_KNNModel import KNNModel
 # adjust these as you try to find the best fit for each classifier.
 
 # Logistic Regression hyperparameters
-eta = 0.1 # Learning rate
-lam = 0.1 # Lambda for regularization
+eta = 0.05 # Learning rate
+lam = .001 # Lambda for regularization
 
 # Whether or not you want the plots to be displayed
 show_charts = True
+
 
 
 # DO NOT CHANGE ANYTHING BELOW THIS LINE!
@@ -78,6 +79,7 @@ df = pd.read_csv('data/hr.csv')
 X = df[['Magnitude', 'Temperature']].values
 y = np.array([star_labels[x] for x in df['Type']])
 
+
 # Setting up and evaluating a number of different classification models
 nb1 = GaussianGenerativeModel(is_shared_covariance=False)
 nb1.fit(X, y)
@@ -111,12 +113,18 @@ visualize_boundary(knn5, X, y, 'knn5_result')
 
 # Setting up some sample data
 X_test = np.array([[6, 2]])
+
+
 y_nb1 = nb1.predict(X_test)
+
 y_nb2 = nb2.predict(X_test)
+
 y_lr = lr.predict(X_test)
+
 y_knn1 = knn1.predict(X_test)
 y_knn3 = knn3.predict(X_test)
 y_knn5 = knn5.predict(X_test)
+
 
 # Predicting an unseen example
 print('Test star type predictions for Separate Covariance Gaussian Model:')

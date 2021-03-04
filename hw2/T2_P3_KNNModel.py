@@ -1,4 +1,5 @@
 import numpy as np
+from scipy import stats
 
 # Please implement the predict() method of this class
 # You can add additional private methods by beginning them with
@@ -16,16 +17,38 @@ class KNNModel:
     def __dummyPrivateMethod(self, input):
         return None
 
+    def __starDist(self, x1, x2):
+        return ((x1[0] - x2[0])/3)**2 + (x1[1] - x2[1])**2
+
     # TODO: Implement this method!
     def predict(self, X_pred):
         # The code in this method should be removed and replaced! We included it
         # just so that the distribution code is runnable and produces a
         # (currently meaningless) visualization.
+
         preds = []
-        for x in X_pred:
-            z = np.cos(x ** 2).sum()
-            preds.append(1 + np.sign(z) * (np.abs(z) > 0.3))
+        for i in range(len(X_pred)):
+            L = []
+            for j in range(len(self.X)):
+
+                if i == j:
+                    continue
+
+                L.append((j, self.__starDist(X_pred[i], self.X[j])))
+
+            L.sort(key = lambda x : x[1])
+
+            indexes = [x[0] for x in L[:self.K]]
+
+            pts = [self.y[index] for index in indexes]
+
+            preds.append(stats.mode(pts)[0][0])
+
+
+
         return np.array(preds)
+
+
 
     # In KNN, "fitting" can be as simple as storing the data, so this has been written for you
     # If you'd like to add some preprocessing here without changing the inputs, feel free,

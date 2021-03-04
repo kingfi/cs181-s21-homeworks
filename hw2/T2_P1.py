@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as c
 import matplotlib.patches as mpatches
+import math
 from scipy.special import expit as sigmoid
 
 # This script requires the above packages to be installed.
@@ -16,16 +17,22 @@ from scipy.special import expit as sigmoid
 
 # Note: this is in Python 3
 
+def exp(arr, power):
+    return [x**power for x in arr]
+
 def basis1(x):
-    return np.stack([np.ones(len(x)), x], axis=1)
+    return np.stack([np.ones(len(x)), x, ], axis=1)
+
 
 # TODO: Implement this
 def basis2(x):
-    return None
+    return np.stack([np.ones(len(x)), x, exp(x, 2), exp(x, 3)], axis=1)
+
 
 # TODO: Implement this
 def basis3(x):
-    return None
+    return np.stack([np.ones(len(x)), x, exp(x, 2), exp(x, 3),
+                    exp(x, 4), exp(x, 5)], axis=1)
 
 class LogisticRegressor:
     def __init__(self, eta, runs):
@@ -37,17 +44,33 @@ class LogisticRegressor:
     def __dummyPrivateMethod(self, input):
         return None
 
+    def __grad(self, x, y, w):
+        x = x.reshape((x.shape[0], 1))
+        yhat = [sigmoid(z) for z in w.T @ x]
+        return (yhat - y)[0][0] * x
+
+
     # TODO: Optimize w using gradient descent
     def fit(self, x, y, w_init=None):
-        # Keep this if case for the autograder
+
+
+        N = x.shape[0]
+        D = x.shape[1]
         if w_init is not None:
             self.W = w_init
         else:
-            self.W = np.random.rand(x.shape[1], 1)
+            self.W = np.random.rand(D, 1)
+        expected_W_shape = self.W.shape
+        for i in range(self.runs):
+            grad = 0
+            for j in range(N):
+                grad += (self.predict(x[j]) - y[j]) * x[j] / N
+            self.W = self.W - np.reshape(self.eta * grad, self.W.shape)
+        assert self.W.shape == expected_W_shape
 
     # TODO: Fix this method!
     def predict(self, x):
-        return np.dot(x, self.W)
+        return sigmoid(np.dot(x, self.W))
 
 # Function to visualize prediction lines
 # Takes as input last_x, last_y, [list of models], basis function, title
@@ -67,7 +90,6 @@ def visualize_prediction_lines(last_x, last_y, models, basis, title):
     # Plot dataset that last model in models (models[-1]) was trained on
     cmap = c.ListedColormap(['r', 'b'])
     plt.scatter(last_x, last_y, c=last_y, cmap=cmap, linewidths=1, edgecolors='black')
-
     # Plot models
     X_pred = np.linspace(-10, 10, 1000)
     X_pred_transformed = basis(X_pred)
@@ -106,17 +128,20 @@ def generate_data(dataset_size):
 if __name__ == "__main__":
     eta = 0.001
     runs = 10000
-    N = 10
+    N = 20
 
     # TODO: Make plot for each basis with all 10 models on each plot
 
-    # For example:
-    all_models = []
-    for _ in range(10):
-        x, y = generate_data(N)
-        x_transformed = basis1(x)
-        model = LogisticRegressor(eta=eta, runs=runs)
-        model.fit(x_transformed, y)
-        all_models.append(model)
-    # Here x and y contain last dataset:
-    visualize_prediction_lines(x, y, all_models, basis1, "exampleplot")
+    for basis in [basis1, basis2, basis3]:
+
+        all_models = []
+        for _ in range(10):
+            x, y = generate_data(N)
+            x_transformed = basis(x)
+            model = LogisticRegressor(eta=eta, runs=runs)
+            model.fit(x_transformed, y)
+            all_models.append(model)
+
+
+        # Here x and y contain last dataset:
+        visualize_prediction_lines(x, y, all_models, basis, basis.__name__)
